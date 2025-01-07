@@ -110,7 +110,7 @@ let ws socket request =
 
   let%lwt client =
     Websocketaf_lwt_unix.Client.connect
-      ~nonce:(Cstruct.to_string (Mirage_crypto_rng.generate 16))
+      ~nonce:(Mirage_crypto_rng.generate 16)
       ~host
       ~port
       ~resource:(Uri.path_and_query target)
