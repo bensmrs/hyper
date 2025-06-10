@@ -5,16 +5,13 @@
 
 
 
-module Httpaf = Dream_httpaf_.Httpaf
-module Websocketaf_lwt_unix = Dream_websocketaf_lwt_unix.Websocketaf_lwt_unix
-
 module Message = Dream_pure.Message
 module Stream = Dream_pure.Stream
 
 
 
 let () =
-  Mirage_crypto_rng_lwt.initialize (module Mirage_crypto_rng.Fortuna)
+  Mirage_crypto_rng_unix.use_default ()
 
 
 
@@ -54,7 +51,7 @@ let ws socket request =
             close 1000
           else begin
             exn_handler := exn;
-            Httpaf.Body.Reader.schedule_read
+            Httpun.Body.Reader.schedule_read
               httpaf_response_body_reader
               ~on_eof:(fun () ->
                 got_eof := true;
@@ -66,19 +63,19 @@ let ws socket request =
           end
 
       and close _code =
-        Httpaf.Body.Reader.close httpaf_response_body_reader
+        Httpun.Body.Reader.close httpaf_response_body_reader
 
       and abort _exn =
         (* TODO Not clear how to report the exception; see
            https://github.com/anmonteiro/websocketaf/issues/40. *)
-        Httpaf.Body.Reader.close httpaf_response_body_reader in
+        Httpun.Body.Reader.close httpaf_response_body_reader in
 
       let client_stream =
         Stream.stream (Stream.reader ~read ~close ~abort) Stream.no_writer in
 
       Message.response
-        ~code:(Httpaf.Status.to_code httpaf_response.Httpaf.Response.status)
-        ~headers:(Httpaf.Headers.to_list httpaf_response.headers)
+        ~code:(Httpun.Status.to_code httpaf_response.Httpun.Response.status)
+        ~headers:(Httpun.Headers.to_list httpaf_response.headers)
         client_stream
         Stream.null
       |> Lwt.wakeup_later receive_response
@@ -109,7 +106,7 @@ let ws socket request =
   in
 
   let%lwt client =
-    Websocketaf_lwt_unix.Client.connect
+    Httpun_ws_lwt_unix.Client.connect
       ~nonce:(Mirage_crypto_rng.generate 16)
       ~host
       ~port

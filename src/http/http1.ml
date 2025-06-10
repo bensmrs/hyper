@@ -5,9 +5,6 @@
 
 
 
-module Httpaf = Dream_httpaf_.Httpaf
-module Httpaf_lwt_unix = Dream_httpaf__lwt_unix.Httpaf_lwt_unix
-
 module Message = Dream_pure.Message
 module Method = Dream_pure.Method
 module Stream = Dream_pure.Stream
@@ -19,17 +16,17 @@ module Stream = Dream_pure.Stream
 let general send_request client connection (request : Message.request) =
 
   (* The http/af request can be created right away. *)
-  let httpaf_request : Httpaf.Request.t =
+  let httpaf_request : Httpun.Request.t =
     Message.set_content_length_headers request;
     let headers =
       Message.all_headers request
-      |> Httpaf.Headers.of_list
+      |> Httpun.Headers.of_list
     and method_ =
-      Httpaf.Method.of_string
+      Httpun.Method.of_string
         (Method.method_to_string (Message.method_ request))
     and target = Uri.path_and_query (Uri.of_string (Message.target request)) in
 
-    Httpaf.Request.create ~headers method_ target
+    Httpun.Request.create ~headers method_ target
   in
 
   (* The http/af response and Hyper response are delayed, so create a
@@ -46,7 +43,7 @@ let general send_request client connection (request : Message.request) =
   (* TODO Propagate the close and abort changes to the server side, HTTP/2,
      etc. *)
   let response_handler
-      (httpaf_response : Httpaf.Response.t) httpaf_response_body =
+      (httpaf_response : Httpun.Response.t) httpaf_response_body =
 
     received_response := true;
 
@@ -66,7 +63,7 @@ let general send_request client connection (request : Message.request) =
           close 1000
         else begin
           exn_handler := exn;
-          Httpaf.Body.Reader.schedule_read
+          Httpun.Body.Reader.schedule_read
             httpaf_response_body
             ~on_eof:(fun () ->
               got_eof := true;
@@ -78,11 +75,11 @@ let general send_request client connection (request : Message.request) =
         end
 
     and close _code =
-      Httpaf.Body.Reader.close httpaf_response_body
+      Httpun.Body.Reader.close httpaf_response_body
 
     and abort exn =
       reported_exn := Some exn;
-      Httpaf.Client_connection.report_exn connection exn
+      Httpun.Client_connection.report_exn connection exn
 
     in
 
@@ -90,8 +87,8 @@ let general send_request client connection (request : Message.request) =
       Stream.stream (Stream.reader ~read ~close ~abort) Stream.no_writer in
 
     Message.response
-      ~code:(Httpaf.Status.to_code httpaf_response.status)
-      ~headers:(Httpaf.Headers.to_list httpaf_response.headers)
+      ~code:(Httpun.Status.to_code httpaf_response.status)
+      ~headers:(Httpun.Headers.to_list httpaf_response.headers)
       client_stream
       Stream.null
     |> Lwt.wakeup_later receive_response
@@ -132,7 +129,7 @@ let general send_request client connection (request : Message.request) =
       (Message.server_stream request) ~data ~flush ~ping ~pong ~close ~exn
 
   and data buffer offset length _binary _fin =
-    Httpaf.Body.Writer.write_bigstring
+    Httpun.Body.Writer.write_bigstring
       httpaf_request_body_writer
       ~off:offset
       ~len:length
@@ -140,14 +137,14 @@ let general send_request client connection (request : Message.request) =
     bytes_since_flush := !bytes_since_flush + length;
     if !bytes_since_flush >= 4096 then begin
       bytes_since_flush := 0;
-      Httpaf.Body.Writer.flush httpaf_request_body_writer send
+      Httpun.Body.Writer.flush httpaf_request_body_writer send
     end
     else
       send ()
 
   and flush () =
     bytes_since_flush := 0;
-    Httpaf.Body.Writer.flush httpaf_request_body_writer send
+    Httpun.Body.Writer.flush httpaf_request_body_writer send
 
   and ping _buffer _offset _length =
     send ()
@@ -156,10 +153,10 @@ let general send_request client connection (request : Message.request) =
     send ()
 
   and close _code =
-    Httpaf.Body.Writer.close httpaf_request_body_writer
+    Httpun.Body.Writer.close httpaf_request_body_writer
 
   and exn exn =
-    Httpaf.Client_connection.report_exn connection exn in
+    Httpun.Client_connection.report_exn connection exn in
 
   send ();
 
@@ -168,7 +165,7 @@ let general send_request client connection (request : Message.request) =
 
 
 let http client =
-  general Httpaf_lwt_unix.Client.request client client.connection
+  general Httpun_lwt_unix.Client.request client client.connection
 
 let https client =
-  general Httpaf_lwt_unix.Client.SSL.request client client.connection
+  general Httpun_lwt_unix.Client.SSL.request client client.connection

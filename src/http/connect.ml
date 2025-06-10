@@ -5,9 +5,6 @@
 
 
 
-module Httpaf_lwt_unix = Dream_httpaf__lwt_unix.Httpaf_lwt_unix
-module H2_lwt_unix = Dream_h2_lwt_unix.H2_lwt_unix
-
 module Message = Dream_pure.Message
 (* module Stream = Dream_pure.Stream *)
 
@@ -25,8 +22,8 @@ type request = Message.request
 
 (* TODO Is this the right representation? *)
 type connection =
-  | Cleartext of Httpaf_lwt_unix.Client.t (* TODO Rename constructor. *)
-  | SSL of Httpaf_lwt_unix.Client.SSL.t
+  | Cleartext of Httpun_lwt_unix.Client.t (* TODO Rename constructor. *)
+  | SSL of Httpun_lwt_unix.Client.SSL.t
   | H2 of H2_lwt_unix.Client.SSL.t (* TODO No h2c support. *)
   | WebSocket of Lwt_unix.file_descr
   (* | WebSocket of Stream.stream *)
@@ -40,8 +37,8 @@ type connection =
 type 'a promise = 'a Dream_pure.Message.promise
 
 (* let close = function
-  | Cleartext connection -> Httpaf_lwt_unix.Client.shutdown connection
-  | SSL connection -> Httpaf_lwt_unix.Client.SSL.shutdown connection
+  | Cleartext connection -> Httpun_lwt_unix.Client.shutdown connection
+  | SSL connection -> Httpun_lwt_unix.Client.SSL.shutdown connection
   | H2 connection -> H2_lwt_unix.Client.SSL.shutdown connection
   | WebSocket connection -> Lwt_unix.close connection *)
 
@@ -72,7 +69,7 @@ let http1_cleartext_tcp target =
   let socket = Lwt_unix.(socket PF_INET SOCK_STREAM 0) in
   let%lwt address = resolve target in
   let%lwt () = Lwt_unix.connect socket address in
-  let%lwt connection = Httpaf_lwt_unix.Client.create_connection socket in
+  let%lwt connection = Httpun_lwt_unix.Client.create_connection socket in
   Lwt.return (Cleartext connection)
 
 let alpn_https_tcp ?(protocols = ["h2"; "http/1.1"]) target =
@@ -101,7 +98,7 @@ let alpn_https_tcp ?(protocols = ["h2"; "http/1.1"]) target =
     Lwt.return (H2 connection)
   | _ -> (* TODO Match http/1.1 or None, while Some _ should be an error. *)
     let%lwt connection =
-      Httpaf_lwt_unix.Client.SSL.create_connection ssl_socket in
+      Httpun_lwt_unix.Client.SSL.create_connection ssl_socket in
     Lwt.return (SSL connection)
   end
   (* TODO Need to do server certificate validation here, etc. *)

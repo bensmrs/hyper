@@ -5,8 +5,6 @@
 
 
 
-module H2_lwt_unix = Dream_h2_lwt_unix.H2_lwt_unix
-
 module Message = Dream_pure.Message
 
 
