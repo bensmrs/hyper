@@ -119,14 +119,14 @@ let https (connection : H2_lwt_unix.Client.SSL.t) (request : Message.request) =
     bytes_since_flush := !bytes_since_flush + length;
     if !bytes_since_flush >= 4096 then begin
       bytes_since_flush := 0;
-      H2.Body.Writer.flush h2_request_body_writer send
+      H2.Body.Writer.flush h2_request_body_writer (fun _ -> send ())
     end
     else
       send ()
 
   and flush () =
     bytes_since_flush := 0;
-    H2.Body.Writer.flush h2_request_body_writer send
+    H2.Body.Writer.flush h2_request_body_writer (fun _ -> send ())
 
   and ping _buffer _offset _length =
     send ()

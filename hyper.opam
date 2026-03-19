@@ -13,7 +13,7 @@ author: "Anton Bachin <antonbachin@yahoo.com>"
 maintainer: "Anton Bachin <antonbachin@yahoo.com>"
 
 depends: [
-  "dream-httpaf" {>= "1.0.0~alpha2"}
+  "dream-httpaf" {>= "1.0.0~alpha4"}
   "dream-pure" {>= "1.0.0~alpha2"}
   "dune" {>= "2.7.0"}
   "lwt_ppx"
@@ -24,7 +24,7 @@ depends: [
 
   "bisect_ppx" {with-test & >= "2.5.0"}  # --instrument-with.
   "dream" {with-test}
-  "ppx_expect" {with-test}
+  "ppx_expect" {with-test & >= "0.17.0"}
 ]
 
 build: [

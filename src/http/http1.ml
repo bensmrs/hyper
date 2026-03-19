@@ -137,14 +137,14 @@ let general send_request client connection (request : Message.request) =
     bytes_since_flush := !bytes_since_flush + length;
     if !bytes_since_flush >= 4096 then begin
       bytes_since_flush := 0;
-      Httpun.Body.Writer.flush httpaf_request_body_writer send
+      Httpun.Body.Writer.flush httpaf_request_body_writer (fun _ -> send ())
     end
     else
       send ()
 
   and flush () =
     bytes_since_flush := 0;
-    Httpun.Body.Writer.flush httpaf_request_body_writer send
+    Httpun.Body.Writer.flush httpaf_request_body_writer (fun _  -> send ())
 
   and ping _buffer _offset _length =
     send ()

@@ -4,7 +4,6 @@
   base
   dream
   hyper
-  ppx_expect.common
   ppx_inline_test.config
   ppx_expect.config_types)
  (preprocess (pps lwt_ppx)))
